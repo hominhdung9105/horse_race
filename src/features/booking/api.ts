@@ -1,0 +1,31 @@
+import { api, json } from '../../core/api';
+
+export type Horse = { id: string; horseCode: string; horseName: string; registrationNumber?: string; passportNumber?: string; breed?: string; sex?: string; dateOfBirth?: string; color?: string; countryOfOriginId?: string; specialRequirements?: string; status: string; versionNo: number };
+export type CustomerProfile = { id: string; customerCode: string; name: string; customerType: string; contactPerson?: string; phone?: string; email?: string; address?: string; countryId?: string; versionNo: number };
+export type RequestSummary = { id: string; requestNo: string; status: string; requestedDepartureAt: string; createdAt: string; horseCount: number; versionNo: number };
+export type TransportRequest = RequestSummary & { customerId: string; originLocationId?: string; destinationLocationId?: string; requestedArrivalAt?: string; preferredTransportMode?: string; specialRequirements?: string; notes?: string; horseIds: string[]; orderId?: string; orderNo?: string; reviewReason?: string };
+
+export const getProfile = () => api<CustomerProfile>('/api/v1/customers/me');
+export const saveProfile = (value: Partial<CustomerProfile>) => api<CustomerProfile>('/api/v1/customers/me', json('PUT', value));
+export const getHorses = () => api<Horse[]>('/api/v1/horses?page=0&pageSize=100');
+export const saveHorse = (value: Partial<Horse>, id?: string) => api<Horse>(`/api/v1/horses${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
+export const deleteHorse = (id: string) => api<void>(`/api/v1/horses/${id}`, json('DELETE'));
+export const getRequests = () => api<RequestSummary[]>('/api/v1/transport-requests?page=0&pageSize=100');
+export const getManagerQueue = () => api<RequestSummary[]>('/api/v1/manager/transport-requests?page=0&pageSize=100');
+export const getRequest = (id: string, manager = false) => api<TransportRequest>(`${manager ? '/api/v1/manager/transport-requests' : '/api/v1/transport-requests'}/${id}`);
+export const saveRequest = (value: Partial<TransportRequest>, id?: string) => api<TransportRequest>(`/api/v1/transport-requests${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
+export const submitRequest = (id: string) => api<TransportRequest>(`/api/v1/transport-requests/${id}/submit`, json('POST'));
+export const reviewRequest = (id: string, action: 'start-review' | 'request-information' | 'approve' | 'reject', reason = '') => api<TransportRequest>(`/api/v1/manager/transport-requests/${id}/${action}`, json('POST', action === 'start-review' ? undefined : { reason }));
+export type DocumentType = { id: string; code: string; name: string; scope: string; description?: string; defaultValidityDays?: number; active: boolean };
+export type ComplianceDocument = { id: string; documentNo: string; documentTypeId: string; documentTypeName?: string; horseId?: string; requestId?: string; tripId?: string; fileName: string; status: string; expiryDate?: string; currentReviewNote?: string };
+export const getDocumentTypes = () => api<DocumentType[]>('/api/v1/compliance/document-types?active=true');
+export const getDocuments = () => api<ComplianceDocument[]>('/api/v1/compliance/documents');
+export const uploadDocumentFile = (form: FormData) => api<ComplianceDocument>('/api/v1/compliance/documents/upload-file', { method: 'POST', body: form });
+export const reviewDocument = (id: string, status: 'APPROVED' | 'REJECTED' | 'NEED_ADDITIONAL_INFO', comment: string) => api<ComplianceDocument>(`/api/v1/compliance/documents/${id}/review`, json('POST', { status, comment }));
+export type ComplianceReadiness = { tripId: string; isReady: boolean; totalRequirements: number; metRequirements: number; missingRequirements: number; expiredRequirements: number; pendingReviewRequirements: number; items: { ruleCode: string; ruleTitle: string; documentTypeName: string; targetScope: string; isMet: boolean; status: string; notes?: string }[] };
+export const evaluateCompliance = (value: { tripId: string; originCountryId: string; destinationCountryId: string; horseIds: string[]; plannedDepartureDate?: string }) => api<ComplianceReadiness>('/api/v1/compliance/readiness/evaluate', json('POST', value));
+export type ClearanceCase = { id: string; caseNo: string; tripId: string; countryId: string; authorityName: string; referenceNumber?: string; status: string; notes?: string };
+export const getClearanceCases = (tripId: string) => api<ClearanceCase[]>(`/api/v1/compliance/clearance/cases/trip/${tripId}`);
+export const createClearanceCase = (value: { tripId: string; countryId: string; authorityName: string; referenceNumber?: string; notes?: string }) => api<ClearanceCase>('/api/v1/compliance/clearance/cases', json('POST', value));
+export const submitClearanceCase = (id: string) => api<ClearanceCase>(`/api/v1/compliance/clearance/cases/${id}/submit`, json('POST'));
+export const reviewClearanceCase = (id: string, status: 'APPROVED' | 'REJECTED' | 'NEED_ADDITIONAL_INFO' | 'COMPLETED', reason: string) => api<ClearanceCase>(`/api/v1/compliance/clearance/cases/${id}/review`, json('POST', { status, reason }));
