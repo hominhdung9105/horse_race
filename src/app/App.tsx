@@ -1,5 +1,5 @@
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from 'react';
-import { ApiError, api, login, logout, PaginationMeta, restoreSession, User } from '../core/api';
+import { ApiError, api, login, logout, PaginationMeta, registerCustomer, restoreSession, User } from '../core/api';
 import { action, addCheckpoint, addLeg, assignHorse, assignResource, assignStaff, createPlan, createTrip, deleteRow, getAssignments, getCheckpoints, getLegs, getTrip, getReadiness, getVersions, newVersion, RecordRow, ResourceName, RoutePlan, RouteVersion, saveRow, Trip, getRows } from '../features/planning/api';
 import { deleteHorse, getHorses, getManagerQueue, getProfile, getRequests, getRequest, Horse, RequestSummary, TransportRequest, reviewRequest, saveHorse, saveProfile, saveRequest, submitRequest, CustomerProfile, ComplianceDocument, DocumentType, getDocuments, getDocumentTypes, uploadDocumentFile, reviewDocument, ComplianceReadiness, evaluateCompliance, ClearanceCase, getClearanceCases, createClearanceCase, submitClearanceCase, reviewClearanceCase } from '../features/booking/api';
 import OperationsView from '../features/operations/OperationsView';
@@ -68,7 +68,9 @@ function navigationFor(role: string): NavGroup[] {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState(''); const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState(''); const [phone, setPhone] = useState(''); const [confirmPassword, setConfirmPassword] = useState('');
   const [page, setPage] = useState('Transport requests');
   const [profileOpen, setProfileOpen] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
@@ -78,9 +80,21 @@ export default function App() {
     try { const account = await login(email, password); setUser(account); }
     catch (e) { setError(errorText(e)); } finally { setBusy(false); }
   }
+  async function signUp(e: FormEvent) {
+    e.preventDefault(); setError('');
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    setBusy(true);
+    try {
+      const account = await registerCustomer({ email: email.trim(), password, fullName: fullName.trim(), phone: phone.trim() || undefined });
+      setUser(account);
+    } catch (e) { setError(errorText(e)); } finally { setBusy(false); }
+  }
+  function changeAuthMode(mode: 'login' | 'register') {
+    setAuthMode(mode); setError(''); setPassword(''); setConfirmPassword('');
+  }
   async function signOut() { await logout(); setUser(null); }
   if (checking) return <main className="center"><p>Restoring secure session…</p></main>;
-  if (!user) return <main className="center"><form className="login panel" onSubmit={signIn}><div className="brand">Equi<span>Route</span></div><h1>Transport workspace</h1><p>Sign in with your customer or operations account.</p>{error && <p className="error">{error}</p>}<Input label="Email" value={email} onChange={setEmail} type="email" required /><Input label="Password" value={password} onChange={setPassword} type="password" required /><button disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button></form></main>;
+  if (!user) return <main className="center"><section className="login panel"><div className="brand">Equi<span>Route</span></div><div className="auth-tabs" role="tablist" aria-label="Account access"><button type="button" role="tab" aria-selected={authMode === 'login'} className={authMode === 'login' ? 'active' : 'ghost'} onClick={() => changeAuthMode('login')}>Sign in</button><button type="button" role="tab" aria-selected={authMode === 'register'} className={authMode === 'register' ? 'active' : 'ghost'} onClick={() => changeAuthMode('register')}>Create account</button></div>{authMode === 'login' ? <form className="auth-form" onSubmit={signIn}><div><h1>Welcome back</h1><p>Sign in with your customer or operations account.</p></div>{error && <p className="auth-error" role="alert">{error}</p>}<Input label="Email" value={email} onChange={setEmail} type="email" required /><Input label="Password" value={password} onChange={setPassword} type="password" required /><button disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button><p className="auth-switch">New to EquiRoute? <button type="button" onClick={() => changeAuthMode('register')}>Create an account</button></p></form> : <form className="auth-form" onSubmit={signUp}><div><h1>Create customer account</h1><p>Register to manage horses and transport requests.</p></div>{error && <p className="auth-error" role="alert">{error}</p>}<Input label="Full name" value={fullName} onChange={setFullName} required /><Input label="Email" value={email} onChange={setEmail} type="email" required /><Input label="Phone (optional)" value={phone} onChange={setPhone} type="tel" /><label>Password<span className="field-hint">Use at least 12 characters</span><input required type="password" minLength={12} maxLength={128} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></label><Input label="Confirm password" value={confirmPassword} onChange={setConfirmPassword} type="password" required /><button disabled={busy}>{busy ? 'Creating account…' : 'Create account'}</button><p className="auth-switch">Already have an account? <button type="button" onClick={() => changeAuthMode('login')}>Sign in</button></p></form>}</section></main>;
   if (!allowedRoles.includes(user.role.toUpperCase())) return <main className="center"><section className="panel"><h1>Workspace access unavailable</h1><p>Your account role ({user.role}) has no matching workspace.</p><button onClick={signOut}>Sign out</button></section></main>;
   const role = user.role.toUpperCase();
   const groups = navigationFor(role);

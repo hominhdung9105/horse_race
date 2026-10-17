@@ -39,6 +39,17 @@ export async function login(email: string, password: string) {
   const result = await request<{ accessToken: string; refreshToken: string; user: User }>(
     '/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }, false,
   );
+  return startSession(result);
+}
+
+export async function registerCustomer(value: { email: string; password: string; fullName: string; phone?: string }) {
+  const result = await request<{ accessToken: string; refreshToken: string; user: User }>(
+    '/api/v1/auth/register', { method: 'POST', body: JSON.stringify(value) }, false,
+  );
+  return startSession(result);
+}
+
+function startSession(result: { accessToken: string; refreshToken: string; user: User }) {
   accessToken = result.accessToken;
   sessionStorage.setItem(refreshKey, result.refreshToken);
   return result.user;
