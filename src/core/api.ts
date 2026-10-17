@@ -7,7 +7,8 @@ export class ApiError extends Error {
   constructor(message: string, readonly status?: number) { super(message); }
 }
 
-type Envelope<T> = { data: T; message?: string; errors?: unknown };
+export type PaginationMeta = { page: number; pageSize: number; totalItems: number; totalPages: number };
+type Envelope<T> = { data: T; message?: string; errors?: unknown; meta?: { pagination?: PaginationMeta } };
 
 async function refresh(): Promise<boolean> {
   if (!refreshInFlight) {
@@ -56,22 +57,29 @@ export async function logout() {
   finally { accessToken = null; sessionStorage.removeItem(refreshKey); }
 }
 
-async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, retry = true, unwrap = true): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
   const response = await fetch(`${baseUrl}${path}`, { ...init, headers });
-  if (response.status === 401 && retry && await refresh()) return request<T>(path, init, false);
+  if (response.status === 401 && retry && await refresh()) return request<T>(path, init, false, unwrap);
   if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = body?.message ?? body?.errors?.[0]?.message ?? `Request failed (${response.status})`;
     throw new ApiError(detail, response.status);
   }
-  return (body && 'data' in body ? body.data : body) as T;
+  return (unwrap && body && 'data' in body ? body.data : body) as T;
 }
 
 export const api = <T>(path: string, init?: RequestInit) => request<T>(path, init);
+export async function pagedApi<T>(path: string, init?: RequestInit): Promise<{ data: T; pagination: PaginationMeta }> {
+  const envelope = await request<Envelope<T>>(path, init, true, false);
+  return {
+    data: envelope.data,
+    pagination: envelope.meta?.pagination ?? { page: 0, pageSize: Array.isArray(envelope.data) ? envelope.data.length : 0, totalItems: Array.isArray(envelope.data) ? envelope.data.length : 0, totalPages: 1 },
+  };
+}
 export const json = (method: string, value?: unknown): RequestInit => ({
   method, ...(value === undefined ? {} : { body: JSON.stringify(value) }),
 });

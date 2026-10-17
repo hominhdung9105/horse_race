@@ -1,4 +1,4 @@
-import { api, json } from '../../core/api';
+import { api, json, pagedApi } from '../../core/api';
 
 export type Horse = { id: string; horseCode: string; horseName: string; registrationNumber?: string; passportNumber?: string; breed?: string; sex?: string; dateOfBirth?: string; color?: string; countryOfOriginId?: string; specialRequirements?: string; status: string; versionNo: number };
 export type CustomerProfile = { id: string; customerCode: string; name: string; customerType: string; contactPerson?: string; phone?: string; email?: string; address?: string; countryId?: string; versionNo: number };
@@ -7,11 +7,11 @@ export type TransportRequest = RequestSummary & { customerId: string; originLoca
 
 export const getProfile = () => api<CustomerProfile>('/api/v1/customers/me');
 export const saveProfile = (value: Partial<CustomerProfile>) => api<CustomerProfile>('/api/v1/customers/me', json('PUT', value));
-export const getHorses = () => api<Horse[]>('/api/v1/horses?page=0&pageSize=100');
+export const getHorses = (page = 0, pageSize = 10) => pagedApi<Horse[]>(`/api/v1/horses?page=${page}&pageSize=${pageSize}`);
 export const saveHorse = (value: Partial<Horse>, id?: string) => api<Horse>(`/api/v1/horses${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
 export const deleteHorse = (id: string) => api<void>(`/api/v1/horses/${id}`, json('DELETE'));
-export const getRequests = () => api<RequestSummary[]>('/api/v1/transport-requests?page=0&pageSize=100');
-export const getManagerQueue = () => api<RequestSummary[]>('/api/v1/manager/transport-requests?page=0&pageSize=100');
+export const getRequests = (page = 0, pageSize = 10) => pagedApi<RequestSummary[]>(`/api/v1/transport-requests?page=${page}&pageSize=${pageSize}`);
+export const getManagerQueue = (page = 0, pageSize = 10) => pagedApi<RequestSummary[]>(`/api/v1/manager/transport-requests?page=${page}&pageSize=${pageSize}`);
 export const getRequest = (id: string, manager = false) => api<TransportRequest>(`${manager ? '/api/v1/manager/transport-requests' : '/api/v1/transport-requests'}/${id}`);
 export const saveRequest = (value: Partial<TransportRequest>, id?: string) => api<TransportRequest>(`/api/v1/transport-requests${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
 export const submitRequest = (id: string) => api<TransportRequest>(`/api/v1/transport-requests/${id}/submit`, json('POST'));
