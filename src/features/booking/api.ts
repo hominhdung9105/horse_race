@@ -7,11 +7,17 @@ export type TransportRequest = RequestSummary & { customerId: string; originLoca
 
 export const getProfile = () => api<CustomerProfile>('/api/v1/customers/me');
 export const saveProfile = (value: Partial<CustomerProfile>) => api<CustomerProfile>('/api/v1/customers/me', json('PUT', value));
-export const getHorses = (page = 0, pageSize = 10) => pagedApi<Horse[]>(`/api/v1/horses?page=${page}&pageSize=${pageSize}`);
+function pageQuery(page: number, pageSize: number, search = '', status = '') {
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (search.trim()) query.set('search', search.trim());
+  if (status) query.set('status', status);
+  return query.toString();
+}
+export const getHorses = (page = 0, pageSize = 10, search = '', status = '') => pagedApi<Horse[]>(`/api/v1/horses?${pageQuery(page, pageSize, search, status)}`);
 export const saveHorse = (value: Partial<Horse>, id?: string) => api<Horse>(`/api/v1/horses${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
 export const deleteHorse = (id: string) => api<void>(`/api/v1/horses/${id}`, json('DELETE'));
-export const getRequests = (page = 0, pageSize = 10) => pagedApi<RequestSummary[]>(`/api/v1/transport-requests?page=${page}&pageSize=${pageSize}`);
-export const getManagerQueue = (page = 0, pageSize = 10) => pagedApi<RequestSummary[]>(`/api/v1/manager/transport-requests?page=${page}&pageSize=${pageSize}`);
+export const getRequests = (page = 0, pageSize = 10, search = '', status = '') => pagedApi<RequestSummary[]>(`/api/v1/transport-requests?${pageQuery(page, pageSize, search, status)}`);
+export const getManagerQueue = (page = 0, pageSize = 10, search = '', status = '') => pagedApi<RequestSummary[]>(`/api/v1/manager/transport-requests?${pageQuery(page, pageSize, search, status)}`);
 export const getRequest = (id: string, manager = false) => api<TransportRequest>(`${manager ? '/api/v1/manager/transport-requests' : '/api/v1/transport-requests'}/${id}`);
 export const saveRequest = (value: Partial<TransportRequest>, id?: string) => api<TransportRequest>(`/api/v1/transport-requests${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
 export const submitRequest = (id: string) => api<TransportRequest>(`/api/v1/transport-requests/${id}/submit`, json('POST'));
