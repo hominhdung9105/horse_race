@@ -34,6 +34,7 @@ The production bundle is written to `dist/`.
 ## Product areas
 
 - Role-aware grouped sidebar with parent and child navigation items
+- Logistics Manager dashboard with live revenue, cost, horse, access-session, request, handover, incident, and account metrics
 - Customer profile opened from the profile icon and edited in a modal
 - Horse registry and customer transport requests with server-side pagination, search and status filters
 - Horse registration and transport-request creation through focused modal dialogs
