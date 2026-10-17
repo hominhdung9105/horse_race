@@ -34,22 +34,29 @@ function ListFilters({ query, status, statuses, placeholder, onQueryChange, onSt
 type NavGroup = { label: string; items: { id: string; label: string }[] };
 function navigationFor(role: string): NavGroup[] {
   const manager = role === 'LOGISTICS_MANAGER' || role === 'ADMIN';
+  const complianceItems = [
+    { id: 'Compliance documents', label: 'Documents' },
+    { id: 'Compliance readiness', label: 'Trip readiness' },
+    { id: 'Border clearance', label: 'Border clearance' },
+  ];
   if (role === 'CUSTOMER') return [
     { label: 'Booking', items: [{ id: 'My horses', label: 'My horses' }, { id: 'Transport requests', label: 'Transport requests' }] },
-    { label: 'Compliance', items: [{ id: 'Compliance', label: 'Documents & clearance' }] },
+    { label: 'Compliance', items: complianceItems },
     { label: 'Journey', items: [{ id: 'Timeline', label: 'Trip timeline' }, { id: 'Tracking', label: 'Live tracking' }, { id: 'Health', label: 'Horse health' }, { id: 'Handover', label: 'Handover' }] },
     { label: 'Account', items: [{ id: 'Notifications', label: 'Notifications' }] },
   ];
   if (manager) return [
     { label: 'Booking', items: [{ id: 'Request review', label: 'Request review' }] },
-    { label: 'Planning', items: [{ id: 'Trips', label: 'Trips & route plans' }, { id: 'Fleet', label: 'Fleet master data' }, { id: 'Compliance', label: 'Compliance' }] },
+    { label: 'Planning', items: [{ id: 'Trips', label: 'Trips & route plans' }, { id: 'Fleet', label: 'Fleet master data' }] },
+    { label: 'Compliance', items: complianceItems },
     { label: 'Operations', items: ['Execution','Tracking','Health','Incidents','Handover','Route changes'].map(id => ({ id, label: id })) },
     { label: 'Reporting', items: [{ id: 'KPI & audit', label: 'KPI & audit' }] },
     { label: 'Account', items: [{ id: 'Notifications', label: 'Notifications' }] },
   ];
-  if (role === 'COMPLIANCE_OFFICER') return [{ label: 'Compliance', items: [{ id: 'Compliance', label: 'Documents & clearance' }] }, { label: 'Account', items: [{ id: 'Notifications', label: 'Notifications' }] }];
+  if (role === 'COMPLIANCE_OFFICER') return [{ label: 'Compliance', items: complianceItems }, { label: 'Account', items: [{ id: 'Notifications', label: 'Notifications' }] }];
   if (role === 'TRANSPORT_SPECIALIST' || role === 'FLEET_ROUTE_COORDINATOR') return [
-    { label: 'Planning', items: [{ id: 'Trips', label: 'Trips & route plans' }, { id: 'Fleet', label: 'Fleet master data' }, { id: 'Compliance', label: 'Compliance' }] },
+    { label: 'Planning', items: [{ id: 'Trips', label: 'Trips & route plans' }, { id: 'Fleet', label: 'Fleet master data' }] },
+    { label: 'Compliance', items: complianceItems },
     { label: 'Operations', items: ['Execution','Tracking','Health','Incidents','Route changes'].map(id => ({ id, label: id })) },
     { label: 'Reporting', items: [{ id: 'KPI & audit', label: 'KPI & audit' }] }, { label: 'Account', items: [{ id: 'Notifications', label: 'Notifications' }] },
   ];
@@ -78,7 +85,8 @@ export default function App() {
   const pages = groups.flatMap(group => group.items.map(item => item.id));
   const activePage = pages.includes(page) ? page : pages[0];
   const operationSection = activePage === 'Timeline' ? 'Execution' : activePage as 'Execution' | 'Tracking' | 'Health' | 'Incidents' | 'Handover' | 'Notifications' | 'Route changes' | 'KPI & audit';
-  return <div className="shell"><aside><div className="brand">Equi<span>Route</span><small>TRANSPORT OPERATIONS</small></div><nav className="nav" aria-label="Main navigation">{groups.map(group => <div className="nav-group" key={group.label}><div className="nav-group-title">{group.label}</div>{group.items.map(item => <button key={item.id} className={activePage === item.id ? 'active' : ''} onClick={() => setPage(item.id)}><span className="nav-dot" />{item.label}</button>)}</div>)}</nav><button className="profile" onClick={() => role === 'CUSTOMER' && setProfileOpen(true)} aria-label={role === 'CUSTOMER' ? 'Open customer profile' : undefined}><div className="avatar">{user.fullName.slice(0,1).toUpperCase()}</div><div><b>{user.fullName}</b><small>{user.role}</small></div></button></aside><div className="workspace"><header><div><p>EquiRoute · Transport operations</p><h1>{activePage}</h1></div><div className="header-actions"><span className="account">{user.email}</span>{role === 'CUSTOMER' && <button className="profile-icon" onClick={() => setProfileOpen(true)} aria-label="Edit customer profile" title="Customer profile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg></button>}<button className="ghost" onClick={signOut}>Sign out</button></div></header>{error && <div className="banner error">{error}<button className="ghost" onClick={() => setError('')}>Dismiss</button></div>}{notice && <div className="banner success">{notice}<button className="ghost" onClick={() => setNotice('')}>Dismiss</button></div>}{activePage === 'Trips' ? <TripsView report={setError} notify={setNotice} /> : activePage === 'Fleet' ? <FleetView report={setError} notify={setNotice} /> : activePage === 'Request review' ? <ReviewView report={setError} notify={setNotice} /> : activePage === 'My horses' ? <BookingView section="horses" report={setError} notify={setNotice} /> : activePage === 'Transport requests' ? <BookingView section="requests" report={setError} notify={setNotice} /> : activePage === 'Compliance' ? <ComplianceView role={role} report={setError} notify={setNotice} /> : <OperationsView section={operationSection} role={role} report={setError} notify={setNotice} />}{profileOpen && <CustomerProfileModal onClose={() => setProfileOpen(false)} report={setError} notify={setNotice} />}</div></div>;
+  const complianceSection = activePage === 'Compliance documents' ? 'documents' : activePage === 'Compliance readiness' ? 'readiness' : activePage === 'Border clearance' ? 'clearance' : null;
+  return <div className="shell"><aside><div className="brand">Equi<span>Route</span><small>TRANSPORT OPERATIONS</small></div><nav className="nav" aria-label="Main navigation">{groups.map(group => <div className="nav-group" key={group.label}><div className="nav-group-title">{group.label}</div>{group.items.map(item => <button key={item.id} className={activePage === item.id ? 'active' : ''} onClick={() => setPage(item.id)}><span className="nav-dot" />{item.label}</button>)}</div>)}</nav><button className="profile" onClick={() => role === 'CUSTOMER' && setProfileOpen(true)} aria-label={role === 'CUSTOMER' ? 'Open customer profile' : undefined}><div className="avatar">{user.fullName.slice(0,1).toUpperCase()}</div><div><b>{user.fullName}</b><small>{user.role}</small></div></button></aside><div className="workspace"><header><div><p>EquiRoute · Transport operations</p><h1>{activePage}</h1></div><div className="header-actions"><span className="account">{user.email}</span>{role === 'CUSTOMER' && <button className="profile-icon" onClick={() => setProfileOpen(true)} aria-label="Edit customer profile" title="Customer profile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg></button>}<button className="ghost" onClick={signOut}>Sign out</button></div></header>{error && <div className="banner error">{error}<button className="ghost" onClick={() => setError('')}>Dismiss</button></div>}{notice && <div className="banner success">{notice}<button className="ghost" onClick={() => setNotice('')}>Dismiss</button></div>}{activePage === 'Trips' ? <TripsView report={setError} notify={setNotice} /> : activePage === 'Fleet' ? <FleetView report={setError} notify={setNotice} /> : activePage === 'Request review' ? <ReviewView report={setError} notify={setNotice} /> : activePage === 'My horses' ? <BookingView section="horses" report={setError} notify={setNotice} /> : activePage === 'Transport requests' ? <BookingView section="requests" report={setError} notify={setNotice} /> : complianceSection ? <ComplianceView section={complianceSection} role={role} report={setError} notify={setNotice} /> : <OperationsView section={operationSection} role={role} report={setError} notify={setNotice} />}{profileOpen && <CustomerProfileModal onClose={() => setProfileOpen(false)} report={setError} notify={setNotice} />}</div></div>;
 }
 
 function CustomerProfileModal({ onClose, report, notify }: { onClose: () => void; report: (s: string) => void; notify: (s: string) => void }) {
@@ -117,18 +125,167 @@ function ReviewView({ report, notify }: { report: (s: string) => void; notify: (
   return <div className="stack"><section className="panel"><div className="panel-title"><div><h2>Transport request queue</h2><p>Review, request more information, approve or reject submitted requests.</p></div><button className="ghost" onClick={() => void reload()}>Refresh</button></div><ListFilters query={query} status={status} statuses={['SUBMITTED','UNDER_REVIEW']} placeholder="Search request number…" onQueryChange={setQuery} onStatusChange={value => { setStatus(value); setPagination(p => ({ ...p, page: 0 })); }} onSearch={() => { setSearch(query.trim()); setPagination(p => ({ ...p, page: 0 })); }} onClear={() => { setQuery(''); setSearch(''); setStatus(''); setPagination(p => ({ ...p, page: 0 })); }} /><div className="table-wrap"><table><thead><tr><th>Request</th><th>Status</th><th>Departure</th><th>Horses</th><th /></tr></thead><tbody>{queue.map(item => <tr key={item.id}><td>{item.requestNo}</td><td><em>{item.status}</em></td><td>{new Date(item.requestedDepartureAt).toLocaleString()}</td><td>{item.horseCount}</td><td><button className="ghost small" onClick={async () => { try { setSelected(await getRequest(item.id, true)); } catch (e) { report(errorText(e)); } }}>Review</button></td></tr>)}{!queue.length && <tr><td colSpan={5}>No requests match the current filters.</td></tr>}</tbody></table></div><Pagination value={pagination} onChange={(page, pageSize) => setPagination(p => ({ ...p, page, pageSize }))} /></section>{selected && <section className="panel"><div className="panel-title"><div><h2>{selected.requestNo}</h2><p>Customer {selected.customerId} · {selected.status}</p></div><button className="ghost" onClick={() => setSelected(null)}>Close</button></div><p>Route: <span className="mono">{selected.originLocationId} → {selected.destinationLocationId}</span></p><p>Horses: {selected.horseIds.join(', ') || 'none'}</p><p>{selected.specialRequirements || selected.notes || 'No additional notes.'}</p><label>Decision reason<textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} /></label><div className="header-actions" style={{ marginTop: 14 }}><button className="ghost" onClick={() => void runReview('start-review')}>Start review</button><button className="ghost" disabled={!reason.trim()} onClick={() => void runReview('request-information')}>Request information</button><button disabled={!reason.trim()} onClick={() => void runReview('approve')}>Approve</button><button className="danger" disabled={!reason.trim()} onClick={() => void runReview('reject')}>Reject</button></div></section>}</div>;
 }
 
-function ComplianceView({ role, report, notify }: { role: string; report: (s: string) => void; notify: (s: string) => void }) {
-  const [types, setTypes] = useState<DocumentType[]>([]); const [documents, setDocuments] = useState<ComplianceDocument[]>([]); const [readiness, setReadiness] = useState<ComplianceReadiness | null>(null); const [clearances, setClearances] = useState<ClearanceCase[]>([]);
+function ComplianceView({ section, role, report, notify }: { section: 'documents' | 'readiness' | 'clearance'; role: string; report: (s: string) => void; notify: (s: string) => void }) {
+  const [types, setTypes] = useState<DocumentType[]>([]);
+  const [documents, setDocuments] = useState<ComplianceDocument[]>([]);
+  const [readiness, setReadiness] = useState<ComplianceReadiness | null>(null);
+  const [clearances, setClearances] = useState<ClearanceCase[]>([]);
+  const [actionOpen, setActionOpen] = useState<'upload' | 'clearance' | null>(null);
+  const [busy, setBusy] = useState(false);
   const reviewer = role === 'COMPLIANCE_OFFICER' || role === 'ADMIN';
-  const reload = useCallback(async () => { try { const [t, d] = await Promise.all([getDocumentTypes(), getDocuments()]); setTypes(t); setDocuments(d); } catch (e) { report(errorText(e)); } }, [report]);
-  useEffect(() => { void reload(); }, [reload]);
-  async function upload(e: FormEvent<HTMLFormElement>) { e.preventDefault(); const form = new FormData(e.currentTarget); try { const file = form.get('file'); if (!(file instanceof File) || !file.size) throw new Error('Choose a document file first.'); const payload = new FormData(); payload.set('file', file); payload.set('documentTypeId', String(form.get('documentTypeId'))); for (const key of ['horseId','requestId','tripId','issueDate','expiryDate','issuingAuthority']) { const value = String(form.get(key) ?? ''); if (value) payload.set(key, value); } await uploadDocumentFile(payload); e.currentTarget.reset(); notify('Compliance document uploaded.'); await reload(); } catch (e) { report(errorText(e)); } }
-  async function evaluate(e: FormEvent<HTMLFormElement>) { e.preventDefault(); const f = new FormData(e.currentTarget); try { const result = await evaluateCompliance({ tripId: String(f.get('tripId')), originCountryId: String(f.get('originCountryId')), destinationCountryId: String(f.get('destinationCountryId')), horseIds: String(f.get('horseIds') || '').split(/[ ,]+/).filter(Boolean), plannedDepartureDate: String(f.get('plannedDepartureDate') || '') || undefined }); setReadiness(result); } catch (e) { report(errorText(e)); } }
-  async function loadClearances(e: FormEvent<HTMLFormElement>) { e.preventDefault(); const f = new FormData(e.currentTarget); try { setClearances(await getClearanceCases(String(f.get('tripId')))); } catch (e) { report(errorText(e)); } }
-  async function makeClearance(e: FormEvent<HTMLFormElement>) { e.preventDefault(); const f = new FormData(e.currentTarget); try { const row = await createClearanceCase({ tripId: String(f.get('tripId')), countryId: String(f.get('countryId')), authorityName: String(f.get('authorityName')), referenceNumber: String(f.get('referenceNumber') || ''), notes: String(f.get('notes') || '') }); setClearances(rows => [...rows, row]); notify('Clearance case created.'); } catch (e) { report(errorText(e)); } }
-  return <div className="stack"><section className="panel"><div className="panel-title"><div><h2>Compliance documents</h2><p>Upload horse, request or trip evidence and track document review status.</p></div><button className="ghost" onClick={() => void reload()}>Refresh</button></div><form className="form-grid" onSubmit={upload}><label>Document type<select name="documentTypeId" required defaultValue=""><option value="" disabled>Select type</option>{types.map(t => <option key={t.id} value={t.id}>{t.name} · {t.scope}</option>)}</select></label><label>Horse ID<input name="horseId" /></label><label>Request ID<input name="requestId" /></label><label>Trip ID<input name="tripId" /></label><label>Issue date<input name="issueDate" type="date" /></label><label>Expiry date<input name="expiryDate" type="date" /></label><label>Issuing authority<input name="issuingAuthority" /></label><label>File<input name="file" type="file" required /></label><button>Upload document</button></form><div className="table-wrap"><table><thead><tr><th>Document</th><th>Type</th><th>Scope</th><th>Entity</th><th>Status</th><th>Expiry</th><th /></tr></thead><tbody>{documents.map(d => <tr key={d.id}><td>{d.documentNo}<small className="subtle">{d.fileName}</small></td><td>{d.documentTypeName ?? d.documentTypeId}</td><td>{d.horseId ? 'Horse' : d.tripId ? 'Trip' : d.requestId ? 'Request' : '—'}</td><td className="mono">{d.horseId ?? d.tripId ?? d.requestId ?? '—'}</td><td><em>{d.status}</em></td><td>{d.expiryDate ?? '—'}</td><td>{reviewer && <span className="header-actions"><button className="small" onClick={async () => { try { await reviewDocument(d.id, 'APPROVED', ''); notify('Document approved.'); await reload(); } catch (e) { report(errorText(e)); } }}>Approve</button><button className="danger small" onClick={async () => { const comment = window.prompt('Reason for rejection:'); if (comment === null || !comment.trim()) return; try { await reviewDocument(d.id, 'REJECTED', comment); notify('Document rejected.'); await reload(); } catch (e) { report(errorText(e)); } }}>Reject</button></span>}</td></tr>)}{!documents.length && <tr><td colSpan={7}>No compliance documents found.</td></tr>}</tbody></table></div></section><section className="panel"><div className="panel-title"><div><h2>Trip compliance readiness</h2><p>Evaluate required documents for route countries and horses.</p></div></div><form className="form-grid" onSubmit={evaluate}><label>Trip ID<input name="tripId" required /></label><label>Origin country ID<input name="originCountryId" required /></label><label>Destination country ID<input name="destinationCountryId" required /></label><label>Horse IDs (comma-separated)<input name="horseIds" /></label><label>Departure date<input name="plannedDepartureDate" type="date" /></label><button>Evaluate requirements</button></form>{readiness && <div className="readiness"><div><h3>{readiness.isReady ? 'Ready for departure' : 'Compliance blockers'}</h3><p>{readiness.metRequirements}/{readiness.totalRequirements} requirements met · {readiness.missingRequirements} missing · {readiness.expiredRequirements} expired · {readiness.pendingReviewRequirements} in review</p>{readiness.items.filter(i => !i.isMet).map((item, index) => <p className="blocker" key={index}>{item.documentTypeName}: {item.status}{item.notes ? ` — ${item.notes}` : ''}</p>)}</div></div>}</section><section className="panel"><div className="panel-title"><div><h2>Border clearance cases</h2><p>Create and track country-specific clearance records against trips.</p></div></div><form className="form-grid" onSubmit={loadClearances}><label>Trip ID<input name="tripId" required /></label><button>Load clearance cases</button></form><form className="form-grid" onSubmit={makeClearance}><label>Trip ID<input name="tripId" required /></label><label>Country ID<input name="countryId" required /></label><label>Authority name<input name="authorityName" required /></label><label>Reference number<input name="referenceNumber" /></label><label>Notes<input name="notes" /></label><button>Create case</button></form><div className="table-wrap"><table><thead><tr><th>Case</th><th>Country</th><th>Authority</th><th>Status</th><th>Actions</th></tr></thead><tbody>{clearances.map(c => <tr key={c.id}><td>{c.caseNo}</td><td className="mono">{c.countryId}</td><td>{c.authorityName}</td><td><em>{c.status}</em></td><td><span className="header-actions"><button className="ghost small" onClick={async () => { try { await submitClearanceCase(c.id); notify('Clearance case submitted.'); const rows = await getClearanceCases(c.tripId); setClearances(rows); } catch (e) { report(errorText(e)); } }}>Submit</button>{reviewer && <button className="small" onClick={async () => { const reason = window.prompt('Review note (optional):') ?? ''; try { await reviewClearanceCase(c.id, 'APPROVED', reason); notify('Clearance case approved.'); setClearances(await getClearanceCases(c.tripId)); } catch (e) { report(errorText(e)); } }}>Approve</button>}</span></td></tr>)}{!clearances.length && <tr><td colSpan={5}>No clearance cases loaded.</td></tr>}</tbody></table></div></section></div>;
-}
 
+  const reloadDocuments = useCallback(async () => {
+    try {
+      const [t, d] = await Promise.all([getDocumentTypes(), getDocuments()]);
+      setTypes(t);
+      setDocuments(d);
+    } catch (e) {
+      report(errorText(e));
+    }
+  }, [report]);
+
+  useEffect(() => {
+    if (section === 'documents') void reloadDocuments();
+  }, [section, reloadDocuments]);
+
+  async function upload(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
+    setBusy(true);
+    try {
+      const file = form.get('file');
+      if (!(file instanceof File) || !file.size) throw new Error('Choose a document file first.');
+      const payload = new FormData();
+      payload.set('file', file);
+      payload.set('documentTypeId', String(form.get('documentTypeId')));
+      for (const key of ['horseId', 'requestId', 'tripId', 'issueDate', 'expiryDate', 'issuingAuthority']) {
+        const value = String(form.get(key) ?? '');
+        if (value) payload.set(key, value);
+      }
+      await uploadDocumentFile(payload);
+      formElement.reset();
+      setActionOpen(null);
+      notify('Compliance document uploaded.');
+      await reloadDocuments();
+    } catch (e) {
+      report(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function evaluate(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    setBusy(true);
+    try {
+      setReadiness(await evaluateCompliance({
+        tripId: String(f.get('tripId')),
+        originCountryId: String(f.get('originCountryId')),
+        destinationCountryId: String(f.get('destinationCountryId')),
+        horseIds: String(f.get('horseIds') || '').split(/[ ,]+/).filter(Boolean),
+        plannedDepartureDate: String(f.get('plannedDepartureDate') || '') || undefined,
+      }));
+    } catch (e) {
+      report(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadClearances(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    setBusy(true);
+    try {
+      setClearances(await getClearanceCases(String(f.get('tripId'))));
+    } catch (e) {
+      report(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function makeClearance(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formElement = e.currentTarget;
+    const f = new FormData(formElement);
+    setBusy(true);
+    try {
+      const row = await createClearanceCase({
+        tripId: String(f.get('tripId')),
+        countryId: String(f.get('countryId')),
+        authorityName: String(f.get('authorityName')),
+        referenceNumber: String(f.get('referenceNumber') || ''),
+        notes: String(f.get('notes') || ''),
+      });
+      setClearances(rows => [row, ...rows]);
+      formElement.reset();
+      setActionOpen(null);
+      notify('Clearance case created.');
+    } catch (e) {
+      report(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (section === 'documents') {
+    return <div className="stack">
+      <section className="panel">
+        <div className="panel-title">
+          <div><h2>Compliance documents</h2><p>Upload horse, request or trip evidence and track review status.</p></div>
+          <div className="header-actions"><button className="ghost" onClick={() => void reloadDocuments()}>Refresh</button><button onClick={() => setActionOpen('upload')}>+ Upload document</button></div>
+        </div>
+        <div className="table-wrap"><table><thead><tr><th>Document</th><th>Type</th><th>Scope</th><th>Entity</th><th>Status</th><th>Expiry</th><th /></tr></thead><tbody>
+          {documents.map(d => <tr key={d.id}><td>{d.documentNo}<small className="subtle">{d.fileName}</small></td><td>{d.documentTypeName ?? d.documentTypeId}</td><td>{d.horseId ? 'Horse' : d.tripId ? 'Trip' : d.requestId ? 'Request' : '—'}</td><td className="mono">{d.horseId ?? d.tripId ?? d.requestId ?? '—'}</td><td><em>{d.status}</em></td><td>{d.expiryDate ?? '—'}</td><td>{reviewer && <span className="header-actions"><button className="small" onClick={async () => { try { await reviewDocument(d.id, 'APPROVED', ''); notify('Document approved.'); await reloadDocuments(); } catch (e) { report(errorText(e)); } }}>Approve</button><button className="danger small" onClick={async () => { const comment = window.prompt('Reason for rejection:'); if (!comment?.trim()) return; try { await reviewDocument(d.id, 'REJECTED', comment); notify('Document rejected.'); await reloadDocuments(); } catch (e) { report(errorText(e)); } }}>Reject</button></span>}</td></tr>)}
+          {!documents.length && <tr><td colSpan={7}>No compliance documents found.</td></tr>}
+        </tbody></table></div>
+      </section>
+      {actionOpen === 'upload' && <ActionModal title="Upload compliance document" description="Attach evidence to a horse, request, or trip." onClose={() => setActionOpen(null)}>
+        <form className="form-grid" onSubmit={upload}>
+          <label>Document type<select name="documentTypeId" required defaultValue=""><option value="" disabled>Select type</option>{types.map(t => <option key={t.id} value={t.id}>{t.name} · {t.scope}</option>)}</select></label>
+          <label>Horse ID<input name="horseId" /></label><label>Request ID<input name="requestId" /></label><label>Trip ID<input name="tripId" /></label>
+          <label>Issue date<input name="issueDate" type="date" /></label><label>Expiry date<input name="expiryDate" type="date" /></label>
+          <label>Issuing authority<input name="issuingAuthority" /></label><label className="span-2">File<input name="file" type="file" required /></label>
+          <div className="modal-actions"><button type="button" className="ghost" onClick={() => setActionOpen(null)}>Cancel</button><button disabled={busy}>{busy ? 'Uploading…' : 'Upload document'}</button></div>
+        </form>
+      </ActionModal>}
+    </div>;
+  }
+
+  if (section === 'readiness') {
+    return <section className="panel">
+      <div className="panel-title"><div><h2>Trip compliance readiness</h2><p>Evaluate required documents for route countries and horses.</p></div></div>
+      <form className="form-grid" onSubmit={evaluate}>
+        <label>Trip ID<input name="tripId" required /></label><label>Origin country ID<input name="originCountryId" required /></label>
+        <label>Destination country ID<input name="destinationCountryId" required /></label><label>Horse IDs (comma-separated)<input name="horseIds" /></label>
+        <label>Departure date<input name="plannedDepartureDate" type="date" /></label><button disabled={busy}>{busy ? 'Evaluating…' : 'Evaluate requirements'}</button>
+      </form>
+      {readiness && <div className="readiness"><div><h3>{readiness.isReady ? 'Ready for departure' : 'Compliance blockers'}</h3><p>{readiness.metRequirements}/{readiness.totalRequirements} requirements met · {readiness.missingRequirements} missing · {readiness.expiredRequirements} expired · {readiness.pendingReviewRequirements} in review</p>{readiness.items.filter(i => !i.isMet).map((item, index) => <p className="blocker" key={index}>{item.documentTypeName}: {item.status}{item.notes ? ' — ' + item.notes : ''}</p>)}</div></div>}
+    </section>;
+  }
+
+  return <div className="stack">
+    <section className="panel">
+      <div className="panel-title"><div><h2>Border clearance cases</h2><p>Find and manage country-specific clearance records for a trip.</p></div><button onClick={() => setActionOpen('clearance')}>+ New case</button></div>
+      <form className="inline-form" onSubmit={loadClearances}><label>Trip ID<input name="tripId" placeholder="Enter a trip UUID" required /></label><button disabled={busy}>{busy ? 'Loading…' : 'Load cases'}</button></form>
+      <div className="table-wrap"><table><thead><tr><th>Case</th><th>Country</th><th>Authority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        {clearances.map(c => <tr key={c.id}><td>{c.caseNo}</td><td className="mono">{c.countryId}</td><td>{c.authorityName}</td><td><em>{c.status}</em></td><td><span className="header-actions"><button className="ghost small" onClick={async () => { try { await submitClearanceCase(c.id); notify('Clearance case submitted.'); setClearances(await getClearanceCases(c.tripId)); } catch (e) { report(errorText(e)); } }}>Submit</button>{reviewer && <button className="small" onClick={async () => { const reason = window.prompt('Review note (optional):') ?? ''; try { await reviewClearanceCase(c.id, 'APPROVED', reason); notify('Clearance case approved.'); setClearances(await getClearanceCases(c.tripId)); } catch (e) { report(errorText(e)); } }}>Approve</button>}</span></td></tr>)}
+        {!clearances.length && <tr><td colSpan={5}>Enter a trip ID to load clearance cases.</td></tr>}
+      </tbody></table></div>
+    </section>
+    {actionOpen === 'clearance' && <ActionModal title="New border clearance case" description="Create a country-specific clearance record for a trip." onClose={() => setActionOpen(null)}>
+      <form className="form-grid" onSubmit={makeClearance}>
+        <label>Trip ID<input name="tripId" required /></label><label>Country ID<input name="countryId" required /></label>
+        <label>Authority name<input name="authorityName" required /></label><label>Reference number<input name="referenceNumber" /></label>
+        <label className="span-2">Notes<input name="notes" /></label>
+        <div className="modal-actions"><button type="button" className="ghost" onClick={() => setActionOpen(null)}>Cancel</button><button disabled={busy}>{busy ? 'Creating…' : 'Create case'}</button></div>
+      </form>
+    </ActionModal>}
+  </div>;
+}
 function TripsView({ report, notify }: { report: (s: string) => void; notify: (s: string) => void }) {
   const [trip, setTrip] = useState<Trip | null>(null); const [selectedId, setSelectedId] = useState(''); const [tripSearch, setTripSearch] = useState('');
   const [plan, setPlan] = useState<RoutePlan | null>(null); const [versions, setVersions] = useState<RouteVersion[]>([]); const [version, setVersion] = useState<RouteVersion | null>(null);
