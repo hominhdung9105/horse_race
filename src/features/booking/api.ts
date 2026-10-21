@@ -14,6 +14,7 @@ function pageQuery(page: number, pageSize: number, search = '', status = '') {
   return query.toString();
 }
 export const getHorses = (page = 0, pageSize = 10, search = '', status = '') => pagedApi<Horse[]>(`/api/v1/horses?${pageQuery(page, pageSize, search, status)}`);
+export const getHorse = (id: string) => api<Horse>(`/api/v1/horses/${id}`);
 export const saveHorse = (value: Partial<Horse>, id?: string) => api<Horse>(`/api/v1/horses${id ? `/${id}` : ''}`, json(id ? 'PUT' : 'POST', value));
 export const deleteHorse = (id: string) => api<void>(`/api/v1/horses/${id}`, json('DELETE'));
 export const getRequests = (page = 0, pageSize = 10, search = '', status = '') => pagedApi<RequestSummary[]>(`/api/v1/transport-requests?${pageQuery(page, pageSize, search, status)}`);

@@ -26,6 +26,7 @@ export const getEta = (tripId: string) => api<Eta>(`/api/v1/trips/${tripId}/eta/
 export const getHealthLogs = (tripId: string, horseId: string) => api<HealthLog[]>(`/api/v1/trips/${tripId}/horses/${horseId}/health/logs`);
 export const addHealthLog = (tripId: string, horseId: string, input: Partial<HealthLog>) => api<HealthLog>(`/api/v1/trips/${tripId}/horses/${horseId}/health/logs`, json('POST', input));
 export const getIncidents = (pageNumber = 1) => api<Incident[]>(`/api/v1/incidents?pageNumber=${pageNumber}&pageSize=50`);
+export const getIncidentsForTrip = (tripId: string) => api<Incident[]>(`/api/v1/incidents/trips/${tripId}`);
 export const createIncident = (input: { tripId: string; horseId?: string; type: string; severity: string; title: string; description: string; occurredAt: string }) => api<Incident>('/api/v1/incidents', json('POST', input));
 export const addIncidentAttachment = (id: string, file: File) => { const body = new FormData(); body.set('file', file); return api(`/api/v1/incidents/${id}/attachments`, { method: 'POST', body }); };
 export const resolveIncident = (id: string, resolutionNote: string) => api<Incident>(`/api/v1/incidents/${id}/resolve`, json('POST', { resolutionNote }));

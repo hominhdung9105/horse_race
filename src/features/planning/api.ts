@@ -1,16 +1,32 @@
-import { api, json } from '../../core/api';
+import { api, json, pagedApi } from '../../core/api';
 
 export type Trip = { id: string; tripNo: string; orderId: string; status: string; complianceReady: boolean; versionNo: number; plannedDepartureAt?: string; plannedArrivalAt?: string };
+export type Location = { id: string; locationCode?: string; name: string; locationType: string; address?: string; city?: string; countryId: string; latitude?: number; longitude?: number; active: boolean };
 export type RoutePlan = { id: string; tripId: string; activeVersionId?: string; versionNo: number };
 export type RouteVersion = { id: string; routePlanId: string; versionNo: number; status: string; reason?: string; totalDistanceKm?: number };
 export type CellValue = string | number | boolean | null | undefined;
 export type RecordRow = Record<string, CellValue> & { id: string };
 export type AssignmentSummary = { resources: RecordRow[]; staff: RecordRow[]; horses: RecordRow[] };
+export type StaffAccount = { id: string; email: string; fullName: string; role: 'DRIVER' | 'ESCORT' | 'DRIVER_ESCORT' };
 export type ResourceName = 'countries' | 'locations' | 'vehicles' | 'stalls' | 'airlines' | 'flight-bookings';
 
-// Planning currently exposes GET /trips/{id}, but no collection endpoint.
 export const getTrip = (id: string) => api<Trip>(`/api/v1/trips/${id}`);
+export const getTrips = (page = 0, pageSize = 100, search = '', status = '') => {
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (search.trim()) query.set('search', search.trim());
+  if (status) query.set('status', status);
+  return pagedApi<Trip[]>(`/api/v1/trips?${query}`);
+};
+export async function getAllTrips() {
+  const first = await getTrips(0, 100);
+  const pages = await Promise.all(Array.from({ length: Math.max(first.pagination.totalPages - 1, 0) }, (_, index) => getTrips(index + 1, 100)));
+  return [ ...first.data, ...pages.flatMap(page => page.data) ];
+}
+export const getMyTrips = () => api<Trip[]>('/api/v1/my-trips');
+export const getStaffDirectory = () => api<StaffAccount[]>('/api/v1/manager/staff');
+export const getBookingLocations = (page = 0, pageSize = 100) => pagedApi<Location[]>(`/api/v1/booking/locations?page=${page}&pageSize=${pageSize}`);
 export const createTrip = (orderId: string) => api<Trip>('/api/v1/trips', json('POST', { orderId }));
+export const getRoutePlanByTrip = (tripId: string) => api<RoutePlan>(`/api/v1/trips/${tripId}/route-plan`);
 export const createPlan = (tripId: string) => api<RoutePlan>(`/api/v1/trips/${tripId}/route-plans`, json('POST'));
 export const getVersions = (planId: string) => api<RouteVersion[]>(`/api/v1/route-plans/${planId}/versions`);
 export const newVersion = (planId: string, reason: string) => api<RouteVersion>(`/api/v1/route-plans/${planId}/versions`, json('POST', { reason }));
