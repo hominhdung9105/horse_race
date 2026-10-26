@@ -1,7 +1,7 @@
 import { api, json } from '../../core/api';
 
 export type TripExecution = { id: string; tripId: string; tripNo: string; status: string; departureAt?: string; arrivalAt?: string; currentCheckpointId?: string; currentLatitude?: number; currentLongitude?: number; lastLocationUpdateAt?: string };
-export type CheckpointEvent = { id: string; locationId: string; sequenceNo: number; checkpointType: string; status: string; actualArrivalAt?: string; actualDepartureAt?: string; notes?: string; createdAt: string };
+export type CheckpointEvent = { id: string; locationId?: string; sequenceNo: number; checkpointType: string; status: string; actualArrivalAt?: string; actualDepartureAt?: string; arrivalLatitude?: number; arrivalLongitude?: number; notes?: string; createdAt: string };
 export type GpsPoint = { id: string; latitude: number; longitude: number; recordedAt: string; accuracy?: number; speed?: number };
 export type Eta = { id: string; currentEta: string; distanceRemainingKm?: number; estimatedMinutesRemaining?: number; delayReason?: string; onTrack?: boolean; calculatedAt: string };
 export type HealthLog = { id: string; horseId?: string; recordedAt: string; conditionType: string; stressLevel?: number; bodyTemperature?: number; heartRate?: number; observation?: string; photoUrl?: string };
@@ -21,8 +21,10 @@ export const getTimeline = (tripId: string) => api<CheckpointEvent[]>(`/api/v1/t
 export const recordCheckpoint = (tripId: string, input: { locationId: string; checkpointType: string; status: string; occurredAt: string; latitude?: number; longitude?: number; notes?: string }) => api<CheckpointEvent>(`/api/v1/trip-executions/${tripId}/checkpoints`, json('POST', input));
 export const recordDeparture = (tripId: string, latitude: number, longitude: number) => api<TripExecution>(`/api/v1/trips/${tripId}/departure`, json('POST', { latitude, longitude }));
 export const recordArrival = (tripId: string, latitude: number, longitude: number) => api<TripExecution>(`/api/v1/trips/${tripId}/arrival`, json('POST', { latitude, longitude }));
-export const getLatestGps = (tripId: string) => api<GpsPoint>(`/api/v1/trips/${tripId}/gps/points/latest`);
-export const getEta = (tripId: string) => api<Eta>(`/api/v1/trips/${tripId}/eta/current`);
+export const getLatestGps = (tripId: string) => api<GpsPoint | null>(`/api/v1/trips/${tripId}/gps/points/latest`);
+export const recordGpsPoint = (tripId: string, input: { latitude: number; longitude: number; accuracy?: number; speed?: number; heading?: number; recordedAt?: string }) => api<GpsPoint>(`/api/v1/trips/${tripId}/gps/points`, json('POST', input));
+export const getEta = (tripId: string) => api<Eta | null>(`/api/v1/trips/${tripId}/eta/current`);
+export const calculateEta = (tripId: string, input: { destinationLatitude: number; destinationLongitude: number; plannedArrivalAtMinutes?: number }) => api<Eta>(`/api/v1/trips/${tripId}/eta/calculate`, json('POST', input));
 export const getHealthLogs = (tripId: string, horseId: string) => api<HealthLog[]>(`/api/v1/trips/${tripId}/horses/${horseId}/health/logs`);
 export const addHealthLog = (tripId: string, horseId: string, input: Partial<HealthLog>) => api<HealthLog>(`/api/v1/trips/${tripId}/horses/${horseId}/health/logs`, json('POST', input));
 export const getIncidents = (pageNumber = 1) => api<Incident[]>(`/api/v1/incidents?pageNumber=${pageNumber}&pageSize=50`);
@@ -32,6 +34,7 @@ export const addIncidentAttachment = (id: string, file: File) => { const body = 
 export const resolveIncident = (id: string, resolutionNote: string) => api<Incident>(`/api/v1/incidents/${id}/resolve`, json('POST', { resolutionNote }));
 export const getHandoverByTrip = (tripId: string) => api<Handover>(`/api/v1/handovers/by-trip/${tripId}`);
 export const createHandover = (input: { tripId: string; receiverName?: string; receiverEmail?: string; scheduledAt?: string; notes?: string }) => api<Handover>('/api/v1/handovers', json('POST', input));
+export const updateHandover = (id: string, input: { receiverName?: string; receiverPhone?: string; receiverEmail?: string; scheduledAt?: string; notes?: string; expectedVersionNo?: number }) => api<Handover>(`/api/v1/handovers/${id}`, json('PATCH', input));
 export const addHandoverHorse = (id: string, input: { horseId: string; condition?: string; issueNote?: string }) => api<HandoverHorse>(`/api/v1/handovers/${id}/horses`, json('POST', input));
 export const inspectHandoverHorse = (id: string, horseId: string, condition: string, issueNote?: string) => api<HandoverHorse>(`/api/v1/handovers/${id}/horses/${horseId}/inspect`, json('POST', { condition, issueNote }));
 export const submitHandover = (id: string, notes?: string) => api<Handover>(`/api/v1/handovers/${id}/submit`, json('POST', { notes }));

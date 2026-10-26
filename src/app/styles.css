@@ -32,6 +32,35 @@
 .health-observation-footer .field-help{max-width:68ch;margin:0}
 .health-observation-footer button{min-width:180px}
 
+.map-event-form{display:grid;gap:12px;width:min(760px,100%);text-align:left}
+.readiness:has(.map-event-form){display:grid;grid-template-columns:minmax(0,1fr);align-items:start}
+.readiness:has(.map-event-form)>div:last-child{display:block;width:100%}
+.osm-point-picker{display:grid;gap:8px;width:100%;padding:12px;border:1px solid #dbe6ec;border-radius:9px;background:#f8fafb}
+.osm-place-search{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;padding-bottom:10px;border-bottom:1px solid #e4ecef}
+.osm-place-search label{display:grid;gap:6px;color:#718494;font-size:12px;font-weight:600}
+.osm-place-search .field-help,.osm-search-error,.osm-search-results{grid-column:1/-1}
+.osm-search-error{color:#a84239;font-size:11px}
+.osm-search-results{display:grid;gap:6px;max-height:170px;overflow:auto}
+.osm-search-results button{display:grid;gap:3px;text-align:left;white-space:normal}
+.osm-search-results b{font-size:11px;font-weight:600}
+.osm-search-results span{color:#718494;font-size:10px}
+.osm-picker-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.osm-picker-heading>div:first-child{display:grid;gap:4px}
+.osm-picker-heading b{color:#526b7d;font-size:12px}
+.osm-picker-heading small{color:#8194a3;font-size:11px}
+.osm-map-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.osm-map-controls span{color:#718494;font-size:11px}
+.osm-map-controls button{min-height:32px;min-width:34px}
+.osm-point-map{position:relative;width:100%;height:340px;overflow:hidden;border:1px solid #cbd8df;border-radius:7px;background:#e7edf0;cursor:crosshair;touch-action:none;user-select:none}
+.osm-point-map.is-dragging{cursor:grabbing}
+.osm-map-tile{position:absolute;width:256px;height:256px;max-width:none;pointer-events:none;user-select:none}
+.osm-point-marker{position:absolute;z-index:2;width:18px;height:18px;border:3px solid #fff;border-radius:50% 50% 50% 0;background:#d44d42;box-shadow:0 1px 5px #132d3b88;transform:translate(-50%,-100%) rotate(-45deg);pointer-events:none}
+.osm-map-error{position:absolute;z-index:3;left:12px;top:12px;max-width:300px;padding:8px 10px;border-radius:6px;background:#fff8e8;color:#8c601c;font-size:11px}
+.osm-attribution{position:absolute;right:0;bottom:0;z-index:4;padding:3px 6px;background:#fffffff0;color:#245c7d;text-decoration:none;font-size:10px}
+.osm-point-summary{display:flex;align-items:center;gap:8px;min-height:24px;color:#718494;font-size:11px}
+.osm-point-summary code{padding:3px 6px;border-radius:4px;background:#eaf1f4;color:#17324d;font-size:11px}
+.map-event-form>button{justify-self:end;min-width:190px}
+
 @media(max-width:1100px){
   aside{width:215px}
   .workspace{padding:24px 18px 50px}
@@ -57,6 +86,11 @@
   .health-load-form.health-browse-form>.trip-picker{grid-column:auto}
   .health-observation-footer{align-items:stretch;flex-direction:column}
   .health-observation-footer button{width:100%}
+  .osm-picker-heading{align-items:flex-start;flex-direction:column}
+  .osm-place-search{grid-template-columns:1fr}
+  .osm-place-search>button{justify-self:start}
+  .osm-point-map{height:280px}
+  .osm-point-summary{align-items:flex-start;flex-direction:column}
   .trip-picker-filters,.filter-bar{grid-template-columns:1fr}
   .trip-load-form:has(>.trip-picker-manual)>button,.health-load-form.health-manual-form>button{align-self:stretch;margin-top:0}
 }

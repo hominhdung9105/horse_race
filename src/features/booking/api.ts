@@ -3,7 +3,7 @@ import { api, json, pagedApi } from '../../core/api';
 export type Horse = { id: string; horseCode: string; horseName: string; registrationNumber?: string; passportNumber?: string; breed?: string; sex?: string; dateOfBirth?: string; color?: string; countryOfOriginId?: string; specialRequirements?: string; status: string; versionNo: number };
 export type CustomerProfile = { id: string; customerCode: string; name: string; customerType: string; contactPerson?: string; phone?: string; email?: string; address?: string; countryId?: string; versionNo: number };
 export type RequestSummary = { id: string; requestNo: string; status: string; requestedDepartureAt: string; createdAt: string; horseCount: number; versionNo: number };
-export type TransportRequest = RequestSummary & { customerId: string; originLocationId?: string; destinationLocationId?: string; requestedArrivalAt?: string; preferredTransportMode?: string; specialRequirements?: string; notes?: string; horseIds: string[]; orderId?: string; orderNo?: string; reviewReason?: string };
+export type TransportRequest = RequestSummary & { customerId: string; originLocationId?: string; destinationLocationId?: string; requestedArrivalAt?: string; preferredTransportMode?: string; specialRequirements?: string; notes?: string; horseIds: string[]; horses?: { id: string; horseName: string; horseCode: string }[]; orderId?: string; orderNo?: string; reviewReason?: string };
 
 export const getProfile = () => api<CustomerProfile>('/api/v1/customers/me');
 export const saveProfile = (value: Partial<CustomerProfile>) => api<CustomerProfile>('/api/v1/customers/me', json('PUT', value));
@@ -35,4 +35,4 @@ export type ClearanceCase = { id: string; caseNo: string; tripId: string; countr
 export const getClearanceCases = (tripId: string) => api<ClearanceCase[]>(`/api/v1/compliance/clearance/cases/trip/${tripId}`);
 export const createClearanceCase = (value: { tripId: string; countryId: string; authorityName: string; referenceNumber?: string; notes?: string }) => api<ClearanceCase>('/api/v1/compliance/clearance/cases', json('POST', value));
 export const submitClearanceCase = (id: string) => api<ClearanceCase>(`/api/v1/compliance/clearance/cases/${id}/submit`, json('POST'));
-export const reviewClearanceCase = (id: string, status: 'APPROVED' | 'REJECTED' | 'NEED_ADDITIONAL_INFO' | 'COMPLETED', reason: string) => api<ClearanceCase>(`/api/v1/compliance/clearance/cases/${id}/review`, json('POST', { status, reason }));
+export const reviewClearanceCase = (id: string, status: 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'NEED_ADDITIONAL_INFO' | 'COMPLETED', reason: string) => api<ClearanceCase>(`/api/v1/compliance/clearance/cases/${id}/review`, json('POST', { status, reason }));
