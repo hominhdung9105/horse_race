@@ -1,4 +1,4 @@
-import { type FormEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 export type MapPoint = { latitude: number; longitude: number };
 
@@ -131,8 +131,7 @@ export default function OsmPointPicker({ label, selected, onSelect }: Props) {
     dragRef.current = null;
   }
 
-  async function searchPlaces(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function searchPlaces() {
     const query = searchQuery.trim();
     if (!query) return;
     const elapsed = Date.now() - lastSearchAt.current;
@@ -171,13 +170,13 @@ export default function OsmPointPicker({ label, selected, onSelect }: Props) {
   }
 
   return <section className="osm-point-picker" aria-label={label}>
-    <form className="osm-place-search" onSubmit={event => void searchPlaces(event)}>
+    <div className="osm-place-search">
       <label>Search for a place or address<input value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder="Stable, airport, town, or public address" /></label>
-      <button type="submit" className="ghost" disabled={searching || !searchQuery.trim()}>{searching ? 'Searching…' : 'Search OSM'}</button>
+      <button type="button" className="ghost" disabled={searching || !searchQuery.trim()} onClick={() => void searchPlaces()}>{searching ? 'Searching…' : 'Search OSM'}</button>
       <small className="field-help">Search runs only when you press the button. The query is sent to OpenStreetMap search; do not enter private information.</small>
       {searchError && <small className="osm-search-error" role="status">{searchError}</small>}
       {!!searchResults.length && <div className="osm-search-results" role="list" aria-label="Place search results">{searchResults.map(result => <button type="button" key={result.place_id} className="ghost small" onClick={() => centerOnPlace(result)}><b>{result.display_name}</b><span>Center map here · {result.type || 'place'}</span></button>)}</div>}
-    </form>
+    </div>
     <div className="osm-picker-heading">
       <div><b>{label}</b><small>Click a point to select it. Drag to pan; use +/− to zoom.</small></div>
       <div className="osm-map-controls">

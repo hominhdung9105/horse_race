@@ -6,6 +6,7 @@ export type GpsPoint = { id: string; latitude: number; longitude: number; record
 export type Eta = { id: string; currentEta: string; distanceRemainingKm?: number; estimatedMinutesRemaining?: number; delayReason?: string; onTrack?: boolean; calculatedAt: string };
 export type HealthLog = { id: string; horseId?: string; recordedAt: string; conditionType: string; stressLevel?: number; bodyTemperature?: number; heartRate?: number; observation?: string; photoUrl?: string };
 export type Incident = { id: string; incidentNo: string; tripId: string; horseId?: string; type: string; severity: string; status: string; title: string; occurredAt: string; resolvedAt?: string };
+export type OrderStatusSummary = { id: string; orderNo: string; requestId: string; status: string; updatedAt: string };
 export type HandoverHorse = { id: string; horseId: string; status: string; condition?: string; issueNote?: string; evidenceImageUrl?: string };
 export type Handover = { id: string; handoverNo: string; tripId: string; status: string; receiverName?: string; receiverEmail?: string; scheduledAt?: string; canComplete: boolean; completionBlockers: string[]; horses: HandoverHorse[]; versionNo: number };
 export type Notification = { id: string; type: string; title: string; message: string; referenceType?: string; referenceId?: string; status: string; readAt?: string; createdAt: string };
@@ -32,6 +33,7 @@ export const getIncidentsForTrip = (tripId: string) => api<Incident[]>(`/api/v1/
 export const createIncident = (input: { tripId: string; horseId?: string; type: string; severity: string; title: string; description: string; occurredAt: string }) => api<Incident>('/api/v1/incidents', json('POST', input));
 export const addIncidentAttachment = (id: string, file: File) => { const body = new FormData(); body.set('file', file); return api(`/api/v1/incidents/${id}/attachments`, { method: 'POST', body }); };
 export const resolveIncident = (id: string, resolutionNote: string) => api<Incident>(`/api/v1/incidents/${id}/resolve`, json('POST', { resolutionNote }));
+export const getOrderStatus = (orderId: string) => api<OrderStatusSummary>(`/api/v1/orders/${orderId}`);
 export const getHandoverByTrip = (tripId: string) => api<Handover>(`/api/v1/handovers/by-trip/${tripId}`);
 export const createHandover = (input: { tripId: string; receiverName?: string; receiverEmail?: string; scheduledAt?: string; notes?: string }) => api<Handover>('/api/v1/handovers', json('POST', input));
 export const updateHandover = (id: string, input: { receiverName?: string; receiverPhone?: string; receiverEmail?: string; scheduledAt?: string; notes?: string; expectedVersionNo?: number }) => api<Handover>(`/api/v1/handovers/${id}`, json('PATCH', input));
@@ -41,6 +43,7 @@ export const submitHandover = (id: string, notes?: string) => api<Handover>(`/ap
 export const completeHandover = (id: string, notes?: string) => api<Handover>(`/api/v1/handovers/${id}/complete`, json('POST', { notes, actualAt: new Date().toISOString() }));
 export const acceptHorse = (id: string, horseId: string, condition: string, note: string) => api<Handover>(`/api/v1/handovers/${id}/horses/${horseId}/accept`, json('POST', { condition, note }));
 export const disputeHorse = (id: string, horseId: string, issueNote: string) => api<Handover>(`/api/v1/handovers/${id}/horses/${horseId}/dispute`, json('POST', { issueNote }));
+export const resolveHorseDispute = (id: string, horseId: string, resolutionNote: string, expectedVersionNo: number) => api<Handover>(`/api/v1/handovers/${id}/horses/${horseId}/resolve-dispute`, json('POST', { resolutionNote, expectedVersionNo }));
 export const uploadHandoverSignature = async (id: string, file: File) => { const body = new FormData(); body.set('file', file); return api<Handover>(`/api/v1/handovers/${id}/signature`, { method: 'POST', body }); };
 export const uploadHandoverEvidence = async (id: string, horseId: string, file: File) => { const body = new FormData(); body.set('file', file); return api<HandoverHorse>(`/api/v1/handovers/${id}/horses/${horseId}/evidence`, { method: 'POST', body }); };
 export const getNotifications = () => api<Notification[]>('/api/v1/notifications/?page=0&pageSize=50');
