@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getManagerQueue, type RequestSummary } from '../booking/api';
 import { getIncidents, getOperationsKpis, type Incident, type OperationsKpis } from '../operations/api';
 import { getBookingDashboard, getIdentityDashboard, type BookingDashboardSummary, type IdentityDashboardSummary } from './api';
+import StatusBadge from '../../core/StatusBadge';
 
 type Props = { userName: string; report: (message: string) => void };
 
@@ -14,6 +15,13 @@ export default function DashboardView({ userName, report }: Props) {
   const [finance, setFinance] = useState<OperationsKpis | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [queue, setQueue] = useState<RequestSummary[]>([]);
+  const [queueQuery, setQueueQuery] = useState('');
+  const [queueStatus, setQueueStatus] = useState('');
+  const [queueSort, setQueueSort] = useState('submitted');
+  const [queueDirection, setQueueDirection] = useState<'asc' | 'desc'>('asc');
+  const [queuePage, setQueuePage] = useState(0);
+  const [queuePageSize, setQueuePageSize] = useState(10);
+  const [queueTotal, setQueueTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [warning, setWarning] = useState('');
 
@@ -21,13 +29,12 @@ export default function DashboardView({ userName, report }: Props) {
     setLoading(true);
     setWarning('');
     const results = await Promise.allSettled([
-      getBookingDashboard(), getIdentityDashboard(), getOperationsKpis(), getIncidents(1), getManagerQueue(0, 5),
+      getBookingDashboard(), getIdentityDashboard(), getOperationsKpis(), getIncidents(1),
     ]);
     if (results[0].status === 'fulfilled') setBooking(results[0].value);
     if (results[1].status === 'fulfilled') setIdentity(results[1].value);
     if (results[2].status === 'fulfilled') setFinance(results[2].value);
-    if (results[3].status === 'fulfilled') setIncidents(results[3].value);
-    if (results[4].status === 'fulfilled') setQueue(results[4].value.data);
+    if (results[3].status === 'fulfilled') setIncidents(results[3].value.data);
     const failures = results.filter(result => result.status === 'rejected');
     if (failures.length === results.length) report('Dashboard data is temporarily unavailable.');
     else if (failures.length) setWarning('Some live metrics are temporarily unavailable; available sections are still shown.');
@@ -35,6 +42,14 @@ export default function DashboardView({ userName, report }: Props) {
   }, [report]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    let active = true;
+    void getManagerQueue(queuePage, queuePageSize, queueQuery, queueStatus, queueSort, queueDirection)
+      .then(result => { if (active) { setQueue(result.data); setQueueTotal(result.pagination.totalItems); } })
+      .catch(() => { if (active) setQueue([]); });
+    return () => { active = false; };
+  }, [queuePage, queuePageSize, queueQuery, queueStatus, queueSort, queueDirection]);
 
   const openIncidents = incidents.filter(item => !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(item.status.toUpperCase())).length;
   const financialRows = useMemo(() => {
@@ -75,8 +90,15 @@ export default function DashboardView({ userName, report }: Props) {
       </section>
     </div>
     <section className="panel">
-      <div className="panel-title"><div><h2>Requests requiring attention</h2><p>The newest submitted and under-review transport requests.</p></div></div>
-      <div className="table-wrap"><table><thead><tr><th>Request</th><th>Status</th><th>Departure</th><th>Horses</th></tr></thead><tbody>{queue.map(item => <tr key={item.id}><td>{item.requestNo}</td><td><em>{item.status}</em></td><td>{new Date(item.requestedDepartureAt).toLocaleString()}</td><td>{item.horseCount}</td></tr>)}{!queue.length && <tr><td colSpan={4}>No requests currently require attention.</td></tr>}</tbody></table></div>
+      <div className="panel-title"><div><h2>Requests requiring attention</h2><p>Search, filter and sort all submitted and under-review requests.</p></div></div>
+      <div className="table-tools">
+        <label>Search requests<input value={queueQuery} onChange={event => { setQueueQuery(event.target.value); setQueuePage(0); }} placeholder="Request number…" /></label>
+        <label>Status<select value={queueStatus} onChange={event => { setQueueStatus(event.target.value); setQueuePage(0); }}><option value="">All statuses</option><option value="SUBMITTED">Submitted</option><option value="UNDER_REVIEW">Under review</option></select></label>
+        <label>Sort by<select value={queueSort} onChange={event => { setQueueSort(event.target.value); setQueuePage(0); }}><option value="submitted">Submitted</option><option value="departure">Departure</option><option value="request">Request number</option></select></label>
+        <label>Direction<select value={queueDirection} onChange={event => { setQueueDirection(event.target.value as 'asc' | 'desc'); setQueuePage(0); }}><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+      </div>
+      <div className="table-wrap"><table><thead><tr><th>Request</th><th>Status</th><th>Departure</th><th>Horses</th></tr></thead><tbody>{queue.map(item => <tr key={item.id}><td>{item.requestNo}</td><td><StatusBadge value={item.status} /></td><td>{new Date(item.requestedDepartureAt).toLocaleString()}</td><td>{item.horseCount}</td></tr>)}{!queue.length && <tr><td colSpan={4}>No requests currently require attention.</td></tr>}</tbody></table></div>
+      <div className="pagination"><span>{queueTotal} requests</span><div className="pagination-controls"><label>Rows<select value={queuePageSize} onChange={event => { setQueuePageSize(Number(event.target.value)); setQueuePage(0); }}><option value={5}>5</option><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label><button className="ghost small" disabled={queuePage <= 0} onClick={() => setQueuePage(page => page - 1)}>Previous</button><b>Page {queuePage + 1} of {Math.max(Math.ceil(queueTotal / queuePageSize), 1)}</b><button className="ghost small" disabled={(queuePage + 1) * queuePageSize >= queueTotal} onClick={() => setQueuePage(page => page + 1)}>Next</button></div></div>
     </section>
   </div>;
 }
