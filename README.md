@@ -1,20 +1,28 @@
-# EquiRoute
+# EquiRoute Web
 
-Web application quản lý vận chuyển ngựa đua xuyên quốc gia.
+React web application for cross-border racehorse transport operations. The client calls the .NET API Gateway; it has no mock-data mode.
+
+## Stack
+
+- React 19, TypeScript, Vite 6
+- Feature-oriented API modules under `src/features`
+- Shared fetch client in `src/core/api.ts`
+- Responsive single-page application with role-based navigation (no React Router)
 
 ## Run locally
 
+Prerequisites: Node.js 20+ and npm. Start the backend stack first so the Gateway is available at `http://localhost:8080`.
+
 ```powershell
-npm install
+npm ci
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal, normally `http://localhost:5173`.
-The Planning screens use the real backend API (no mock-data mode). Start the backend stack first so the Gateway is listening on `http://localhost:8080`.
+Open the URL printed by Vite, normally `http://localhost:5173`. The Vite proxy forwards `/api` to `VITE_API_PROXY_TARGET` (default `http://localhost:8080`). Copy `.env.example` to `.env.local` to change the Gateway target or OSRM routing URL. `VITE_API_BASE_URL` can be set when the browser should call a directly reachable API instead of using the Vite proxy.
 
-Copy `.env.example` to `.env.local` if the Gateway uses another address. `VITE_API_PROXY_TARGET` configures the Vite development proxy; `VITE_API_BASE_URL` can be set when the API is exposed directly. The browser calls `/api` through Vite by default, so local development does not need a permissive CORS policy.
+Sign in with an account provisioned by Identity or register a customer account. Roles recognized by the UI are `CUSTOMER`, `TRANSPORT_SPECIALIST`, `LOGISTICS_MANAGER`, `COMPLIANCE_OFFICER`, `ADMIN`, `DRIVER`, `ESCORT`, `DRIVER_ESCORT`, and `FLEET_ROUTE_COORDINATOR`. Navigation is role-aware; every service still enforces authorization on its endpoints.
 
-Sign in with a backend `CUSTOMER`, `TRANSPORT_SPECIALIST`, `LOGISTICS_MANAGER`, `COMPLIANCE_OFFICER`, or `ADMIN` account. Credentials are provisioned by the backend and are intentionally not stored in this repository. Refresh tokens are kept in session storage and the short-lived access token stays in memory.
+The refresh token is stored in `sessionStorage`; the short-lived access token is held in memory. Credentials are not stored in the repository.
 
 ## Production build
 
@@ -22,18 +30,32 @@ Sign in with a backend `CUSTOMER`, `TRANSPORT_SPECIALIST`, `LOGISTICS_MANAGER`, 
 npm run build
 ```
 
-The production bundle is written to `dist/`.
+This runs TypeScript project checks and writes the production bundle to `dist/`.
 
-## Product areas
+## Current product areas
 
-- Customer profile, horse registry, and transport requests
-- Manager transport-request review queue
-- Compliance document upload/review and trip readiness evaluation
-- Trips, route plans, and fleet master data (vehicles, locations, stalls, countries, airlines, flight bookings)
+- Customer account, horse registry, transport request wizard, document upload and request history
+- Manager request review, dispatch and operational dashboard
+- Compliance document and rule administration, trip readiness and border clearance
+- Trips, route plans and versions, resource/staff/horse assignments, fleet and route capabilities
+- Trip execution, checkpoints, GPS/ETA, health logs, incidents, handover, notifications, audit and KPIs
 
-Planning currently has no trip-list or route-plan-by-trip GET endpoint. The UI looks up a trip by ID and creates a route plan, but cannot recover an existing plan after a page reload until the backend adds a read endpoint.
+Not every action is available to every role. The sidebar reflects the current UI role policy; the owning backend service remains authoritative.
+
+## Booking lists
+
+Customer and manager booking lists send `page`, `pageSize`, `search`, and `status` to the Gateway. Filtering occurs on the server before pagination. Changing search or status returns the list to page zero.
+
+```http
+GET /api/v1/transport-requests?page=0&pageSize=10&search=QUEUE&status=SUBMITTED
+```
+
+## Planning API coverage
+
+The current UI uses the Planning trip-list endpoint and route-plan-by-trip read endpoint. Route legs, assignments, route versions, and capabilities are loaded through their corresponding read APIs; a route plan can be reopened after reloading the page.
 
 ## Documentation
 
-- [Frontend architecture](docs/ARCHITECTURE.md)
-- [Development guide](docs/DEVELOPMENT.md)
+- [Frontend architecture](../../docs/architecture/frontend.md)
+- [Frontend development guide](docs/DEVELOPMENT.md)
+- [Project documentation index](../../docs/README.md)
